@@ -34,7 +34,7 @@ def monte_carlo_area_and_integral(polygon, func, n_points):
 
 
 # ---- 4. Проверим для разных N ----
-N_values = [500, 2000, 5000, 10000, 100_000]
+N_values = [1000, 2500, 5000, 10_000, 50_000]
 areas, integrals = [], []
 
 for N in N_values:
@@ -58,13 +58,13 @@ plt.show()
 plt.figure(figsize=(10, 4))
 plt.subplot(1, 2, 1)
 plt.plot(N_values, areas, marker='o')
-plt.title("Оценка площади vs N")
+plt.title("Оценка площади")
 plt.xlabel("N")
 plt.ylabel("Площадь")
 
 plt.subplot(1, 2, 2)
 plt.plot(N_values, integrals, marker='o', color='orange')
-plt.title("Оценка интеграла vs N")
+plt.title("Оценка интеграла")
 plt.xlabel("N")
 plt.ylabel("Интеграл")
 plt.tight_layout()
