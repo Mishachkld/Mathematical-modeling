@@ -22,10 +22,12 @@ def ifs_attractor(n_points=200000):
     x = np.zeros(2)
     points = []
     for i in range(n_points):
+        #На каждом шаге случайно выбирается одно из трёх отображений — и получается новая точка.
         A, b = transforms[np.random.randint(3)]
         x = A @ x + b
         if i > 100:  # пропускаем первые итерации
             points.append(x)
+    # После большого числа итераций формируется устойчивое множество точек (=аттрактор)
     return np.array(points)
 
 
@@ -46,7 +48,7 @@ def fractal_dimension(Z):
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
     return -coeffs[0]
 
-
+### n_particles - колличество частиц
 def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
     grid = np.zeros((grid_size, grid_size), dtype=int)
     center = grid_size // 2
@@ -56,6 +58,7 @@ def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
 
     for i in range(n_particles):
         # Старт частицы — на окружности вокруг центра
+        # Каждая частица начинает на окружности чуть дальше от уже образованного кластера:
         angle = 2 * np.pi * random()
         r_start = max_r + 5
         x = int(center + r_start * np.cos(angle))
@@ -78,6 +81,7 @@ def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
                 break  # "улетела"
 
             # Проверка прилипания
+            # Если частица оказывается рядом (в квадрате 3×3) с уже прилипшими точками — она “приклеивается”:
             if np.any(grid[x - 1:x + 2, y - 1:y + 2]):
                 grid[x, y] = 1
                 r = np.sqrt((x - center) ** 2 + (y - center) ** 2)
@@ -88,21 +92,21 @@ def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
     return grid
 
 
-grid = random_walk_stick(grid_size=201, n_particles=800)
+grid = random_walk_stick(grid_size=201, n_particles=800) # фрактальное разветвлённое образование, похожее на снежинку.
 plt.figure(figsize=(6, 6))
 plt.imshow(grid, cmap='plasma', origin='lower')
-plt.title("Случайное блуждание с прилипанием (DLA)")
+plt.title("Случайное блуждание с прилипанием")
 plt.axis('off')
 plt.show()
 
 
 fd = fractal_dimension(grid)
 print("Фрактальная (метрическая) размерность:", fd)
-
+#Аттрактор
 points = ifs_attractor(300000)
 plt.figure(figsize=(7,7))
 plt.scatter(points[:,0], points[:,1], s=0.2, color='black')
-plt.title("Аттрактор (трихлиственное отображение)")
+plt.title("Аттрактор")# Получили трихлиственное отображение (трехлиствиник)
 plt.axis('equal')
 plt.axis('off')
 plt.show()
