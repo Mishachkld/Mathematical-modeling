@@ -33,10 +33,12 @@ def ifs_attractor(n_points=200000):
 
 def fractal_dimension(Z):
     assert len(Z.shape) == 2
-
+    # коллличество непустых квадратов массива Z размером k на k
     def boxcount(Z, k):
         S = np.add.reduceat(
+            # Делит массив Z на квадраты k на k.
             np.add.reduceat(Z, np.arange(0, Z.shape[0], k), axis=0),
+            # считает сколько квадратов не пустые
             np.arange(0, Z.shape[1], k), axis=1)
         return len(np.where((S > 0) & (S < k * k))[0])
 
@@ -45,8 +47,9 @@ def fractal_dimension(Z):
     n = 2 ** np.floor(np.log2(p))
     sizes = 2 ** np.arange(int(np.log2(n)), 1, -1)
     counts = [boxcount(Z, int(size)) for size in sizes]
+    # Линейная аппроксимация
     coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
-    return -coeffs[0]
+    return -coeffs[0] # размерность
 
 ### n_particles - колличество частиц
 def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
@@ -99,6 +102,13 @@ plt.title("Случайное блуждание с прилипанием")
 plt.axis('off')
 plt.show()
 
+grid_medium = random_walk_stick(grid_size=201, n_particles=1000) # фрактальное разветвлённое образование, похожее на снежинку.
+plt.imshow(grid_medium, cmap='plasma', origin='lower')
+plt.show()
+
+grid3_large = random_walk_stick(grid_size=201, n_particles=10000) # фрактальное разветвлённое образование, похожее на снежинку.
+plt.imshow(grid3_large, cmap='plasma', origin='lower')
+plt.show()
 
 fd = fractal_dimension(grid)
 print("Фрактальная (метрическая) размерность:", fd)
