@@ -1,123 +1,97 @@
-
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 
-# -----------------------------
-# 1. Задание параметров задачи
-# -----------------------------
+# Параметры задачи
 x_min, x_max = 0.0, 10.0
 t_min, t_max = 0.0, 100.0
 
-# Скорость и правая часть
-V = lambda x: 11.0 - x
+V = lambda x: 11 - x
 f = lambda x: 6.5
+u_init = lambda x: np.maximum(0, (x - 5) * (10 - x))
+u_left = lambda t: t * (t - 20) * (t - 50) / 20000
 
-# Начальное и граничное условия
-U0 = lambda x: max(0.0, (x - 5.0) * (10.0 - x))          # начальное U(0,x)
-g = lambda t: t * (t - 20.0) * (t - 50.0) / 20000.0      # граничное U(t,0)
 
-# --------------------------------------------
-# 2. Аналитическое решение (метод характеристик)
-# --------------------------------------------
-def analytic_solution(t, x):
-    # x0 — координата, из которой характеристика пришла в (t,x)
+# Явная схема
+def explicit_corner(N_x, N_t):
+    h = (x_max - x_min) / N_x
+    tau = (t_max - t_min) / N_t
+    x = np.linspace(x_min, x_max, N_x + 1)
+    t = np.linspace(t_min, t_max, N_t + 1)
+    U = np.zeros((N_t + 1, N_x + 1))
+    U[0, :] = u_init(x)
+    for n in range(N_t):
+        U[n + 1, 0] = u_left(t[n + 1])
+        for i in range(1, N_x + 1):
+            U[n + 1, i] = U[n, i] - (tau / h) * V(x[i]) * (U[n, i] - U[n, i - 1]) + tau * f(x[i])
+    return x, t, U.T
+
+
+# Неявная схема
+def implicit_corner(N_x, N_t):
+    h = (x_max - x_min) / N_x
+    tau = (t_max - t_min) / N_t
+    x = np.linspace(x_min, x_max, N_x + 1)
+    t = np.linspace(t_min, t_max, N_t + 1)
+    U = np.zeros((N_t + 1, N_x + 1))
+    U[0, :] = u_init(x)
+    for n in range(N_t):
+        U[n + 1, 0] = u_left(t[n + 1])
+        for i in range(1, N_x + 1):
+            sigma = tau / h * V(x[i])
+            U[n + 1, i] = (U[n, i] + tau * f(x[i]) + sigma * U[n + 1, i - 1]) / (1 + sigma)
+    return x, t, U.T
+
+
+# Аналитическое решение по методу характеристик
+def U_analytic(x, t):
     x0 = 11.0 - (11.0 - x) * np.exp(t)
     if x0 >= 0.0:
-        # характеристика из области начального условия
-        return U0(x0) + 6.5 * t
+        return u_init(x0) + 6.5 * t
     else:
-        # характеристика пересекла левую границу
         s = t + np.log(1.0 - x / 11.0)
-        return g(s) + 6.5 * (t - s)
+        return u_left(s) + 6.5 * (t - s)
 
-# --------------------------------------------
-# 3. Явная схема (upwind, первый порядок)
-# --------------------------------------------
-def explicit_upwind(dx, dt):
-    nx = int((x_max - x_min) / dx) + 1
-    x = np.linspace(x_min, x_max, nx)
-    nt = int(np.ceil((t_max - t_min) / dt)) + 1
-    dt = (t_max - t_min) / (nt - 1)
 
-    U = np.array([U0(xx) for xx in x])
+def analytic(N_x, N_t):
+    x = np.linspace(x_min, x_max, N_x + 1)
+    t = np.linspace(t_min, t_max, N_t + 1)
+    U = np.zeros((N_x + 1, N_t + 1))
+    for i, x_i in enumerate(x):
+        for j, t_j in enumerate(t):
+            U[i][j] = U_analytic(x_i, t_j)
+    return x, t, U
 
-    for n in range(1, nt):
-        t = (n - 1) * dt
-        U_new = U.copy()
-        # граничное условие на x=0
-        U_new[0] = g(t + dt)
-        # внутренние узлы
-        for i in range(1, nx):
-            Vi = V(x[i])
-            U_new[i] = U[i] - dt / dx * Vi * (U[i] - U[i - 1]) + dt * f(x[i])
-        U = U_new
 
-    return x, U
+# Основная функция сравнения
+def solve(N_x, N_t):
+    print(f"Сетка {N_x}x{N_t}")
+    x_ex, t_ex, u_ex = explicit_corner(N_x, N_t)
+    x_impl, t_impl, u_impl = implicit_corner(N_x, N_t)
+    x_al, t_al, u_al = analytic(N_x, N_t)
 
-# --------------------------------------------
-# 4. Неявная схема (upwind, первый порядок)
-# --------------------------------------------
-def implicit_upwind(dx, dt):
-    nx = int((x_max - x_min) / dx) + 1
-    x = np.linspace(x_min, x_max, nx)
-    nt = int(np.ceil((t_max - t_min) / dt)) + 1
-    dt = (t_max - t_min) / (nt - 1)
-
-    U = np.array([U0(xx) for xx in x])
-
-    for n in range(1, nt):
-        t = (n - 1) * dt
-        U_new = np.zeros_like(U)
-        U_new[0] = g(t + dt)
-        for i in range(1, nx):
-            Vi = V(x[i])
-            alpha = dt / dx * Vi
-            U_new[i] = (U[i] + dt * f(x[i]) + alpha * U_new[i - 1]) / (1.0 + alpha)
-        U = U_new
-
-    return x, U
-
-# --------------------------------------------
-# 5. Тестируем 5 вариантов шагов
-# --------------------------------------------
-dx_list = [1.0, 0.5, 0.2, 0.1, 0.05]
-results = []
-
-for dx in dx_list:
-    dt = 0.9 * dx / 11.0  # шаг по времени (условие КФЛ)
-    x_e, U_e = explicit_upwind(dx, dt)
-    x_i, U_i = implicit_upwind(dx, dt)
-    U_a = np.array([analytic_solution(t_max, xi) for xi in x_e])
-
-    # Среднеквадратичная ошибка (СКО)
-    rms_e = np.sqrt(np.mean((U_e - U_a) ** 2))
-    rms_i = np.sqrt(np.mean((U_i - U_a) ** 2))
-
-    results.append({
-        "dx": dx,
-        "dt": dt,
-        "nx": len(x_e),
-        "nt": int(np.ceil((t_max - t_min) / dt)) + 1,
-        "rms_explicit": rms_e,
-        "rms_implicit": rms_i
-    })
-
-    # Графики
-    plt.figure(figsize=(8, 4))
-    plt.plot(x_e, U_a, label='Analytic', linewidth=1.5)
-    plt.plot(x_e, U_e, '--', label='Explicit upwind')
-    plt.plot(x_i, U_i, ':', label='Implicit upwind')
-    plt.xlabel('x')
-    plt.ylabel('U(t=100, x)')
-    plt.title(f'dx={dx:.3f}, dt={dt:.5f}, nx={len(x_e)}, nt={int(np.ceil((t_max - t_min)/dt))+1}')
+    # Последний временной слой (t = t_max)
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_ex, u_ex[:, -1], label="Явная схема", lw=2)
+    plt.plot(x_impl, u_impl[:, -1], label="Неявная схема", lw=2)
+    plt.plot(x_al, u_al[:, -1], label="Аналитическое решение", lw=2, linestyle="--")
+    plt.xlabel("x")
+    plt.ylabel("U(x, t_max)")
+    plt.title(f"Сравнение решений при t = {t_max}, N_x={N_x}, N_t={N_t}")
     plt.legend()
     plt.grid(True)
-    plt.show()
+    # plt.show()
 
-# --------------------------------------------
-# 6. Таблица ошибок
-# --------------------------------------------
-df = pd.DataFrame(results)
-print("\nРезультаты сравнения схем:")
-print(df.to_string(index=False))
+    print(f"Отклонение между решениями (явная - неявная): {np.var(u_impl - u_ex)}")
+    print(f"Отклонение между решениями (явная - аналитическое): {np.var(u_ex - u_al)}")
+    print(f"Отклонение между решениями (неявная - аналитическое): {np.var(u_al - u_impl)}")
+    print("-" * 60)
+
+
+solve(5, 500)
+
+solve(10, 1000)
+solve(30, 3000)
+solve(50, 5000)
+solve(100, 10000)
+
