@@ -78,10 +78,10 @@ def plot_phase_portrait(ax, r1, r2, K1, K2, alpha12, alpha21, title):
         if x >= 0 and y >= 0 and x <= K1 * 1.2 and y <= K2 * 1.2:
             ax.plot(x, y, 'o', markersize=8, color=color[i], label=point_phase[i])
 
-    # Траектории из разных начальных условий
+    # TODO: Траектории из разных начальных условий
     initial_conditions = [
-        [0.1, 0.1], [0.5, 0.1], [0.1, 0.5],
-        [0.8, 0.2], [0.2, 0.8], [0.6, 0.6]
+        [20, 20], [10, 10],
+        [50, 5], [5, 80], [10, 20]
     ]
 
     t = np.linspace(0, 20, 1000)
@@ -104,8 +104,8 @@ def plot_time_series(ax, r1, r2, K1, K2, alpha12, alpha21, title):
     """Построение временных рядов"""
     t = np.linspace(0, 20, 1000)
 
-    # Разные начальные условия
-    initial_conditions = [[0.5, 0.5], [0.8, 0.2]]
+    # TODO: Разные начальные условия
+    initial_conditions = [[10, 10], [20, 20]]
     colors = ['red', 'blue']
 
     for i, N0 in enumerate(initial_conditions):
