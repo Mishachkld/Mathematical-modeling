@@ -95,6 +95,22 @@ def random_walk_stick(grid_size=201, n_particles=500, stick_radius=1):
     return grid
 
 
+# Преобразуем точки аттрактора в двумерную сетку (изображение)
+def points_to_grid(points, grid_size=500):
+    x_min, x_max = points[:, 0].min(), points[:, 0].max()
+    y_min, y_max = points[:, 1].min(), points[:, 1].max()
+
+    grid = np.zeros((grid_size, grid_size))
+    xs = ((points[:, 0] - x_min) / (x_max - x_min) * (grid_size - 1)).astype(int)
+    ys = ((points[:, 1] - y_min) / (y_max - y_min) * (grid_size - 1)).astype(int)
+
+    grid[ys, xs] = 1
+    return grid
+
+
+
+
+
 grid = random_walk_stick(grid_size=201, n_particles=800) # фрактальное разветвлённое образование, похожее на снежинку.
 plt.figure(figsize=(6, 6))
 plt.imshow(grid, cmap='plasma', origin='lower')
@@ -102,16 +118,23 @@ plt.title("Случайное блуждание с прилипанием")
 plt.axis('off')
 plt.show()
 
-grid_medium = random_walk_stick(grid_size=201, n_particles=1000) # фрактальное разветвлённое образование, похожее на снежинку.
-plt.imshow(grid_medium, cmap='plasma', origin='lower')
-plt.show()
 
-grid3_large = random_walk_stick(grid_size=201, n_particles=10000) # фрактальное разветвлённое образование, похожее на снежинку.
-plt.imshow(grid3_large, cmap='plasma', origin='lower')
-plt.show()
+
+# grid_medium = random_walk_stick(grid_size=201, n_particles=1000) # фрактальное разветвлённое образование, похожее на снежинку.
+# plt.imshow(grid_medium, cmap='plasma', origin='lower')
+# plt.show()
+
+# grid3_large = random_walk_stick(grid_size=201, n_particles=10000) # фрактальное разветвлённое образование, похожее на снежинку.
+# plt.imshow(grid3_large, cmap='plasma', origin='lower')
+# plt.show()
 
 fd = fractal_dimension(grid)
 print("Фрактальная (метрическая) размерность:", fd)
+
+# fd = fractal_dimension(grid_medium)
+# print("Фрактальная (метрическая) размерность:", fd)
+# fd = fractal_dimension(grid3_large)
+# print("Фрактальная (метрическая) размерность:", fd)
 #Аттрактор
 points = ifs_attractor(300000)
 plt.figure(figsize=(7,7))
@@ -119,4 +142,18 @@ plt.scatter(points[:,0], points[:,1], s=0.2, color='black')
 plt.title("Аттрактор")# Получили трихлиственное отображение (трехлиствиник)
 plt.axis('equal')
 plt.axis('off')
+
+# Создаём сетку из точек аттрактора
+grid_ifs = points_to_grid(points, grid_size=800)
+
+# Визуализируем сетку (фрактал в виде бинарного изображения)
+plt.figure(figsize=(6, 6))
+plt.imshow(grid_ifs, cmap='binary', origin='lower')
+plt.title("Аттрактор в виде сетки для расчёта размерности")
+plt.axis('off')
 plt.show()
+
+# Вычисляем метрическую (фрактальную) размерность
+fd_ifs = fractal_dimension(grid_ifs)
+print("Размерность задание 2:", fd_ifs)
+# plt.show()
