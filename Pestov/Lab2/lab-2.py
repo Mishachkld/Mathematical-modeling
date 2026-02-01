@@ -8,7 +8,7 @@ def f(y):
 def f_deriv(y):
     return -2*y / (1 + y**2)**2
 
-def system(z, p):
+def system(t, z, p):
     x, y, q = z
     ny = f(y)
     dxdt = p / ny**2
@@ -21,7 +21,7 @@ t_eval = np.linspace(*t_span, 5000)
 
 plt.figure(figsize=(8, 5))
 
-for p in [0.9, 0.8, 0.7, 0.6]:
+for p in [0.99, 0.75, 0.6, 0.5]:
     q0 = np.sqrt(f(0) ** 2 - p ** 2)
     sol = solve_ivp(system, t_span, [0, 0, q0],
                     t_eval=t_eval, args=(p,))
