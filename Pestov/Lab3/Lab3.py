@@ -4,24 +4,24 @@ from scipy.integrate import quad
 from scipy.interpolate import interp1d
 
 n0 = 1.5
-alpha = 1.2
+a = 1.2
 p0 = 0.3
 
 
 def n(y):
-    return n0 * np.exp(-alpha * y)
+    return n0 * np.exp(-a * y)
 
 
 def n_inv(p):
-    return -np.log(p / n0) / alpha
+    return -np.log(p / n0) / a
 
 
 def T_of_p(p):
     integr = lambda y: n(y) ** 2 / np.sqrt(n(y) ** 2 - p ** 2)
-    val, error = quad(integr, 0, n_inv(p))
+    val, error = quad(integr, 0, n_inv(p)) # считаем интеграл
     return 2 * val
 
-
+# прямая задача
 def X_of_p(p):
     integrand = lambda y: 1 / np.sqrt(n(y) ** 2 - p ** 2)
     val, _ = quad(integrand, 0, n_inv(p))
@@ -39,27 +39,27 @@ def n_inv_rec(r):
     return val / np.pi
 
 
-p_rays = np.linspace(p0, 1.2, 5)
+p_rays = np.linspace(p0, 1.4, 5)
 
 plt.figure(figsize=(6, 4))
 
 for p in p_rays:
-    y_top = n_inv(p)  # точка поворота
-    y = np.linspace(0, y_top, 300)
+    y_max = n_inv(p)  # точка поворота
+    y = np.linspace(0, y_max, 300, endpoint=False)
     x = np.zeros_like(y)
 
     for i in range(1, len(y)):
         dy = y[i] - y[i - 1]
-        x[i] = x[i - 1] + ray_x(y[i], p) * dy  # численное интегрирование
+        x[i] = x[i - 1] + ray_x(y[i], p) * dy  # численное интегрирование (Эйлером)
 
     x_full = np.concatenate([x, 2 * x[-1] - x[::-1]])
     y_full = np.concatenate([y, y[::-1]])
 
-    plt.plot(x_full, y_full, label=f"p={p:.2f}, T={T_of_p(p):.2f}")
+    plt.plot(x_full, y_full, label=f" T={T_of_p(p):.2f} p={p:.2f}")
 
 plt.xlabel("x")
 plt.ylabel("y")
-plt.title("Траектории лучей")
+plt.title("Лучи")
 plt.legend()
 plt.grid()
 plt.show()
@@ -78,7 +78,6 @@ plt.show()
 X_interp = interp1d(p_vals, X_vals,
                     kind="cubic",  # кубическая интерполяция (устойчиво вычисления интеграла)
                     fill_value="extrapolate")  # позволяет оценивать значения функций за пределами исходных точек
-                                               # (разрешает вызвать x_inter вне сетки)
 
 r_vals = np.linspace(p0, n0 * 0.95, 40)
 y_rec = np.array([n_inv_rec(r) for r in r_vals]) # мы знаем как далеко идут лучи X(p) и поэтому востанавливаем
@@ -89,8 +88,8 @@ y_true = np.linspace(0, max(y_rec), 200)
 n_true = n(y_true)
 
 plt.figure(figsize=(6, 4))
-plt.plot(n_true, y_true, label="Исходная n(y)")
 plt.plot(r_vals, y_rec, label="Восстановленная n(y)")
+plt.plot(n_true, y_true, label="Начальная n(y)")
 plt.xlabel("n")
 plt.ylabel("y")
 plt.legend()
