@@ -16,8 +16,7 @@ tau = 0.4 * h / c # временной шаг
 Nt = int(T / tau) # число временных шагов
 
 
-# Компактно поддержанная f
-# (две отдельные области)
+# f (две отдельные области)
 def initial_function(x, y):
     f = np.zeros_like(x)
     f[((x-0.3)**2 + (y-0.3)**2) < 0.05**2] = 1.0
@@ -35,7 +34,7 @@ def apply_neumann(u):
 
 
 # Прямая задача
-def solve_forward(f):
+def solve(f):
     u_prev = f.copy()
     u_curr = f.copy()
     data = []
@@ -97,8 +96,8 @@ X, Y = np.meshgrid(x, y, indexing='ij')
 
 f = initial_function(X, Y)
 
-data_forward_task = solve_forward(f)
-v0 = solve_inverse(data_forward_task)
+data_forward_task = solve(f)
+data_restored = solve_inverse(data_forward_task)
 
 
 plt.figure(figsize=(10, 4))
@@ -110,7 +109,7 @@ plt.colorbar()
 
 plt.subplot(1, 2, 2)
 plt.title("Восстановленная v(x,y,0)")
-plt.imshow(v0, extent=[0,l,0,l], vmax=1, vmin=0)
+plt.imshow(data_restored, extent=[0, l, 0, l], vmax=1, vmin=0)
 plt.colorbar()
 
 plt.show()
